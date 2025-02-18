@@ -1,11 +1,32 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>ChatGuard
-    </title>
-  </head>
-  <body>
-    <h1>Hello, Extension!</h1>
-    <script src="popup.js"></script>
-  </body>
+<head>
+  <title>ChatGuard Settings</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .switch {
+      margin: 10px 0;
+    }
+    #wordList {
+      margin-top: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h2>ChatGuard</h2>
+  <div class="switch">
+    <label>
+      <input type="checkbox" id="enableDetection">
+      Enable Detection
+    </label>
+  </div>
+  <div id="wordList"></div>
+  <script src="popup.js"></script>
+</body>
 </html>
