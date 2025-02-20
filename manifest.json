@@ -2,19 +2,8 @@
   "manifest_version": 3,
   "name": "ChatGuard",
   "version": "1.0",
-  "description": "Detects and handles offensive words on web pages",
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "content_scripts": [{
-    "matches": ["<all_urls>"],
-    "js": ["content.js"]
-  }],
+  "description": "Protect against cyberbullying in online communications",
+  "permissions": ["storage", "activeTab"],
   "action": {
     "default_popup": "popup.html"
   },
