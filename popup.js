@@ -16,4 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('enableDetection').addEventListener('change', (e) => {
       chrome.storage.local.set({ detectionEnabled: e.target.checked });
     });
+
+
+
+    
   });
