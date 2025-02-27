@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="80" fill="#FFD700" />
+  <circle cx="70" cy="80" r="10" fill="#001573" />
+  <circle cx="130" cy="80" r="10" fill="#001573" />
+  <path d="M70 120 Q100 140 130 120" fill="none" stroke="#001573" stroke-width="8" />
+  <text x="100" y="190" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#474DFF">THANK YOU</text>
+</svg>
