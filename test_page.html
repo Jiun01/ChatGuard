@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChatGuard Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #474DFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ChatGuard Testing Page</h1>
+    <p>This page helps you test if the ChatGuard extension is correctly detecting offensive language.</p>
+
+    <div class="test-section">
+        <h2>Test 1: Text Input</h2>
+        <p>Type some text below. If it contains offensive language, it should be highlighted.</p>
+        <input type="text" id="test-input" placeholder="Type something here..." style="width: 100%; padding: 8px;">
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Textarea</h2>
+        <p>Type or paste longer text here:</p>
+        <textarea id="test-textarea" placeholder="Type or paste longer text here..."></textarea>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Form Submission</h2>
+        <p>Enter offensive text and click submit. The offensive words should be replaced with asterisks.</p>
+        <form id="test-form">
+            <textarea id="form-textarea" placeholder="Type offensive text here..."></textarea>
+            <button type="submit">Submit</button>
+        </form>
+        <div class="result" id="form-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Contenteditable</h2>
+        <p>Type in this contenteditable div:</p>
+        <div contenteditable="true" style="border: 1px solid #ccc; padding: 10px; min-height: 100px;">
+            Type here...
+        </div>
+    </div>
+
+    <script>
+        // Handle form submission
+        document.getElementById('test-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const textArea = document.getElementById('form-textarea');
+            const resultDiv = document.getElementById('form-result');
+            resultDiv.textContent = 'Submitted text: ' + textArea.value;
+        });
+    </script>
+</body>
+</html>
