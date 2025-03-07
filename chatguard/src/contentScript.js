@@ -115,10 +115,18 @@ async function analyzeText(text) {
 
 // Handle analysis result - Rely on ML model's classification
 function handleAnalysisResult(result, element) {
+  // Remove previous highlighting if any
+  resetHighlighting(element);
+  
   // Check if the ML model classified it as offensive
   if (result.is_offensive) {
     if (settings.enableHighlighting) {
-      highlightOffensiveText(element);
+      highlightOffensiveWords(element, result.offensive_words || []);
+    }
+    
+    // Apply auto-replacement immediately if enabled
+    if (settings.enableAutoReplacement) {
+      applyWordReplacement(element, result.offensive_words || []);
     }
     
     if (settings.enableNotifications) {
@@ -132,30 +140,141 @@ function handleAnalysisResult(result, element) {
     element.dataset.offensiveWords = JSON.stringify(result.offensive_words || []);
     
     // Listen for form submission if this input is part of a form
-    if (element.form && settings.enableAutoReplacement) {
-      if (!element.form.dataset.chatguardListener) {
-        element.form.addEventListener('submit', handleFormSubmit);
-        element.form.dataset.chatguardListener = 'true';
-      }
+    if (element.form && !element.form.dataset.chatguardListener) {
+      element.form.addEventListener('submit', handleFormSubmit);
+      element.form.dataset.chatguardListener = 'true';
     }
   } else {
     // Reset highlighting and data attribute
-    resetHighlighting(element);
     element.dataset.containsOffensive = 'false';
     element.dataset.offensiveWords = '';
   }
 }
 
-// Highlight offensive text in the input
-function highlightOffensiveText(element) {
-  // Visual indication depends on the element type
+// Highlight only the offensive words within the element
+function highlightOffensiveWords(element, offensiveWords) {
+  if (!offensiveWords || offensiveWords.length === 0) return;
+  
   if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-    element.style.border = '2px solid red';
-    element.style.backgroundColor = 'rgba(255, 0, 0, 0.05)';
+    // For standard inputs, we need to create a visual indicator
+    createHighlightOverlay(element, offensiveWords);
   } else {
-    // For contenteditable
-    element.style.outline = '2px solid red';
-    element.style.backgroundColor = 'rgba(255, 0, 0, 0.05)';
+    // For contenteditable elements, we can modify the innerHTML
+    highlightContentEditableWords(element, offensiveWords);
+  }
+}
+
+// Create highlight overlay for standard inputs
+function createHighlightOverlay(element, offensiveWords) {
+  // Set a subtle red background for the input element
+  element.style.backgroundColor = 'rgba(255, 200, 200, 0.2)';
+  
+  // Create or update an overlay div to display highlighted words
+  let overlay = element.nextElementSibling;
+  if (!overlay || !overlay.classList.contains('chatguard-overlay')) {
+    overlay = document.createElement('div');
+    overlay.className = 'chatguard-overlay';
+    overlay.style.cssText = `
+      font-size: 12px;
+      margin-top: 4px;
+      color: #555;
+    `;
+    element.parentNode.insertBefore(overlay, element.nextSibling);
+  }
+  
+  // Update the overlay content
+  overlay.innerHTML = 'Detected: ' + offensiveWords.map(word => 
+    `<span style="color: red; font-weight: bold;">${word}</span>`
+  ).join(', ');
+}
+
+// Highlight words within a contenteditable element
+function highlightContentEditableWords(element, offensiveWords) {
+  if (!offensiveWords || offensiveWords.length === 0) return;
+  
+  // Get the current HTML content
+  let html = element.innerHTML;
+  
+  // Create a regex pattern from the offensive words
+  const escapedWords = offensiveWords.map(word => 
+    word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
+  const pattern = new RegExp('\\b(' + escapedWords.join('|') + ')\\b', 'gi');
+  
+  // Replace words with highlighted versions
+  const newHtml = html.replace(pattern, match => 
+    `<span style="background-color: rgba(255, 0, 0, 0.2); border-bottom: 2px solid red;">${match}</span>`
+  );
+  
+  // Only update if changes were made to avoid cursor position issues
+  if (newHtml !== html) {
+    // Save selection position
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    const startOffset = range.startOffset;
+    const endOffset = range.endOffset;
+    
+    // Update content
+    element.innerHTML = newHtml;
+    
+    // Try to restore cursor position
+    try {
+      if (selection.rangeCount > 0) {
+        const newRange = document.createRange();
+        newRange.setStart(element.firstChild, Math.min(startOffset, element.textContent.length));
+        newRange.setEnd(element.firstChild, Math.min(endOffset, element.textContent.length));
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    } catch (e) {
+      console.error('Error restoring selection:', e);
+    }
+  }
+}
+
+// Apply real-time word replacement with asterisks
+function applyWordReplacement(element, offensiveWords) {
+  if (!offensiveWords || offensiveWords.length === 0) return;
+  
+  // Create a regex pattern from the offensive words
+  const escapedWords = offensiveWords.map(word => 
+    word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
+  const pattern = new RegExp('\\b(' + escapedWords.join('|') + ')\\b', 'gi');
+  
+  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+    // For standard inputs, replace text directly
+    // Save cursor position
+    const cursorPos = element.selectionStart;
+    
+    // Replace text
+    const originalText = element.value;
+    element.value = originalText.replace(pattern, match => '*'.repeat(match.length));
+    
+    // Try to restore cursor position
+    try {
+      element.setSelectionRange(cursorPos, cursorPos);
+    } catch (e) {
+      console.error('Error restoring cursor position:', e);
+    }
+  } else {
+    // For contenteditable elements
+    // Save selection position
+    const selection = window.getSelection();
+    const savedSelection = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+    
+    // Replace text
+    element.textContent = element.textContent.replace(pattern, match => '*'.repeat(match.length));
+    
+    // Try to restore selection
+    if (savedSelection) {
+      try {
+        selection.removeAllRanges();
+        selection.addRange(savedSelection);
+      } catch (e) {
+        console.error('Error restoring selection:', e);
+      }
+    }
   }
 }
 
@@ -164,6 +283,12 @@ function resetHighlighting(element) {
   element.style.border = '';
   element.style.backgroundColor = '';
   element.style.outline = '';
+  
+  // Remove any overlay
+  const overlay = element.nextElementSibling;
+  if (overlay && overlay.classList.contains('chatguard-overlay')) {
+    overlay.remove();
+  }
 }
 
 // Show notification about offensive content
@@ -219,7 +344,7 @@ function handleFormSubmit(event) {
   const inputsWithOffensiveContent = form.querySelectorAll('[data-contains-offensive="true"]');
   
   if (inputsWithOffensiveContent.length > 0 && settings.enableAutoReplacement) {
-    // Replace offensive content before submission
+    // Replace offensive content before submission (as a final check)
     inputsWithOffensiveContent.forEach(input => {
       const offensiveWordsJson = input.dataset.offensiveWords || '';
       
