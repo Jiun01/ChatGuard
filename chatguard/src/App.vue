@@ -2,7 +2,7 @@
     <div class="app-container">
       <div class="app-header">
         <div class="logo">
-          <img src="@/assets/logo.svg" alt="ChatGuard Logo">
+          <img src="@/assets/logo.png" alt="ChatGuard Logo">
         </div>
         <div class="close-button">
           <button>×</button>

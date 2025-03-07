@@ -3,7 +3,7 @@
       <div class="preference-page">
         <div class="preference-item">
           <div class="preference-text">
-            Enable ChatGuard for www.instagram.com
+            Enable ChatGuard
           </div>
           <ToggleSwitch v-model="enableForInstagram" />
         </div>

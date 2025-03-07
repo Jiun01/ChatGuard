@@ -1,7 +1,6 @@
 <template>
   <div class="sidebar-layout">
     <div class="sidebar">
-      <!-- Removed user info section with avatar, name, and email -->
       <nav class="nav-menu">
         <router-link 
           to="/" 
@@ -41,7 +40,6 @@
 <script>
 export default {
   name: 'SidebarLayout'
-  // Removed data property with username and email
 }
 </script>
 
@@ -59,8 +57,6 @@ export default {
     padding: 15px;
     display: flex;
     flex-direction: column;
-    
-    /* Removed user-info styles since the section was removed */
     
     .nav-menu {
       display: flex;
