@@ -8,11 +8,6 @@ const routes = [
     component: PreferencePage
   },
   {
-    path: '/profile',
-    name: 'Profile',
-    component: () => import('../views/ProfilePage.vue')
-  },
-  {
     path: '/feedback',
     name: 'Feedback',
     component: () => import('../views/FeedbackPage.vue')

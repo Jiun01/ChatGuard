@@ -12,15 +12,6 @@
         </router-link>
         
         <router-link 
-          to="/profile" 
-          class="nav-item"
-          :class="{ 'active': $route.path === '/profile' }"
-        >
-          <span class="icon">👤</span>
-          <span>Profile</span>
-        </router-link>
-        
-        <router-link 
           to="/feedback" 
           class="nav-item"
           :class="{ 'active': $route.path === '/feedback' }"
