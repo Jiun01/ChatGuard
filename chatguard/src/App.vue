@@ -33,28 +33,32 @@
   }
   
   .app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: $jordy-blue;
+  
+  .logo {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 10px;
-    background-color: $jordy-blue;
-    
-    .logo {
-      img {
-        height: 40px;
-      }
-    }
-    
-    .close-button {
-      button {
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: $white;
-      }
+    img {
+      height: 60px;
+      width: auto;
+      object-fit: contain;
     }
   }
+  
+  .close-button {
+    button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: $white;
+    }
+  }
+}
   
   .app-content {
     flex: 1;

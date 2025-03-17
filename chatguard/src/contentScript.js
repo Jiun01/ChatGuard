@@ -276,6 +276,8 @@ function applyWordReplacement(element, offensiveWords) {
       }
     }
   }
+  // Increment the replacement counter
+  incrementReplacementCounter();
 }
 
 // Reset highlighting
@@ -358,6 +360,9 @@ function handleFormSubmit(event) {
     
     // Show notification about the replacement
     showNotification();
+    
+    // Increment the replacement counter
+    incrementReplacementCounter();
   }
 }
 
@@ -435,6 +440,38 @@ const observer = new MutationObserver((mutations) => {
     }
   }
 });
+
+// Function to increment the replacement counter
+function incrementReplacementCounter() {
+  if (chrome && chrome.storage) {
+    chrome.storage.sync.get(['replacementData'], (result) => {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      
+      let data = result.replacementData || {
+        count: 0,
+        month: currentMonth,
+        year: currentYear
+      };
+      
+      // Reset counter if it's a new month
+      if (data.month !== currentMonth || data.year !== currentYear) {
+        data = {
+          count: 0,
+          month: currentMonth,
+          year: currentYear
+        };
+      }
+      
+      // Increment the counter
+      data.count += 1;
+      
+      // Save updated data
+      chrome.storage.sync.set({ replacementData: data });
+    });
+  }
+}
 
 // Start observing
 observer.observe(document.body, {

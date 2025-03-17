@@ -10,11 +10,6 @@
       
       <div class="profile-links">
         <a href="https://example.com/help" target="_blank" class="link">Help Center</a>
-        
-        <button class="logout-btn" @click="logout">
-          Log Out
-          <span class="icon">→</span>
-        </button>
       </div>
     </div>
   </SidebarLayout>
@@ -43,23 +38,9 @@ export default {
       if (typeof chrome !== 'undefined' && chrome.storage) {
         chrome.storage.sync.get(['replacementData'], (result) => {
           if (result.replacementData) {
-            const data = result.replacementData;
-            const currentDate = new Date();
-            const currentMonth = currentDate.getMonth();
-            const currentYear = currentDate.getFullYear();
-            
-            // If the stored month/year matches current month/year, use the stored count
-            // Otherwise, it's a new month, so reset to 0
-            if (data.month === currentMonth && data.year === currentYear) {
-              this.replacementsCount = data.count;
-            } else {
-              this.replacementsCount = 0;
-              // Save the new month data
-              this.saveReplacementCount(0);
-            }
+            this.replacementsCount = result.replacementData.count || 0;
           } else {
             // No data stored yet, initialize with 0
-            this.replacementsCount = 0;
             this.saveReplacementCount(0);
           }
         });
@@ -68,20 +49,11 @@ export default {
         const storedData = localStorage.getItem('chatguard-replacements');
         if (storedData) {
           const data = JSON.parse(storedData);
-          const currentDate = new Date();
-          const currentMonth = currentDate.getMonth();
-          const currentYear = currentDate.getFullYear();
-          
-          if (data.month === currentMonth && data.year === currentYear) {
-            this.replacementsCount = data.count;
-          } else {
-            this.replacementsCount = 0;
-            this.saveReplacementCount(0);
-          }
+          this.replacementsCount = data.count || 0;
         } else {
-          // Initialize with example value for the UI shell (11 as shown in image)
-          this.replacementsCount = 11;
-          this.saveReplacementCount(11);
+          // For development purposes, start with 0
+          this.replacementsCount = 0;
+          this.saveReplacementCount(0);
         }
       }
     },
@@ -98,10 +70,6 @@ export default {
       } else {
         localStorage.setItem('chatguard-replacements', JSON.stringify(data));
       }
-    },
-    logout() {
-      // For the UI shell, just show an alert
-      alert('Logout functionality will be implemented in the future');
     }
   }
 }
@@ -142,22 +110,6 @@ export default {
       
       &:hover {
         text-decoration: underline;
-      }
-    }
-    
-    .logout-btn {
-      display: flex;
-      align-items: center;
-      background: none;
-      border: none;
-      color: red;
-      cursor: pointer;
-      padding: 0;
-      font-size: 14px;
-      width: fit-content;
-      
-      .icon {
-        margin-left: 5px;
       }
     }
   }
