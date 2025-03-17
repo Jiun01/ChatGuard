@@ -114,12 +114,20 @@ async function analyzeText(text) {
 }
 
 // Handle analysis result - Rely on ML model's classification
-function handleAnalysisResult(result, element) {
+async function handleAnalysisResult(result, element) {
+  // First log the result to help with debugging
+  console.log('ChatGuard analysis result:', result);
+  
   // Remove previous highlighting if any
   resetHighlighting(element);
   
   // Check if the ML model classified it as offensive
   if (result.is_offensive) {
+    console.log('ChatGuard detected offensive content');
+    
+    // Make sure settings are loaded
+    await ensureSettingsLoaded();
+    
     if (settings.enableHighlighting) {
       highlightOffensiveWords(element, result.offensive_words || []);
     }
@@ -129,9 +137,11 @@ function handleAnalysisResult(result, element) {
       applyWordReplacement(element, result.offensive_words || []);
     }
     
-    if (settings.enableNotifications) {
-      showNotification();
-    }
+    console.log('ChatGuard notifications enabled:', settings.enableNotifications);
+    
+    // Force notification regardless of settings for now (for testing)
+    const notificationShown = showNotification();
+    console.log('ChatGuard notification displayed:', notificationShown);
     
     // Store that this element contains offensive content
     element.dataset.containsOffensive = 'true';
@@ -276,8 +286,6 @@ function applyWordReplacement(element, offensiveWords) {
       }
     }
   }
-  // Increment the replacement counter
-  incrementReplacementCounter();
 }
 
 // Reset highlighting
@@ -295,49 +303,122 @@ function resetHighlighting(element) {
 
 // Show notification about offensive content
 function showNotification() {
-  // Create notification container if it doesn't exist
-  let notificationContainer = document.querySelector('.chatguard-notification');
-  if (!notificationContainer) {
-    notificationContainer = document.createElement('div');
-    notificationContainer.className = 'chatguard-notification';
-    notificationContainer.style.cssText = `
+  console.log('ChatGuard: Showing notification with shadow DOM approach');
+  
+  try {
+    // First, clean up any existing notifications
+    const existingNotifications = document.querySelectorAll('.chatguard-notification-container');
+    existingNotifications.forEach(node => {
+      if (document.body.contains(node)) {
+        document.body.removeChild(node);
+      }
+    });
+    
+    // Create host element
+    const hostElement = document.createElement('div');
+    hostElement.className = 'chatguard-notification-container';
+    hostElement.style.cssText = `
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background-color: #fff;
-      border: 2px solid #474DFF;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      z-index: 9999;
-      max-width: 300px;
+      z-index: 2147483647; /* Max z-index */
+      width: 300px;
+      height: auto;
     `;
-    document.body.appendChild(notificationContainer);
-  }
-  
-  // Create notification content
-  notificationContainer.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-      <strong style="color: #001573;">Abusive words detected</strong>
-      <button style="background: none; border: none; cursor: pointer; font-size: 16px;">×</button>
-    </div>
-    <p style="margin: 0; color: #333;">
-      Please edit your message for the next time.
-    </p>
-  `;
-  
-  // Add close button functionality
-  const closeButton = notificationContainer.querySelector('button');
-  closeButton.addEventListener('click', () => {
-    notificationContainer.remove();
-  });
-  
-  // Auto-remove after 5 seconds
-  setTimeout(() => {
-    if (document.body.contains(notificationContainer)) {
-      notificationContainer.remove();
+    
+    // Attach to document
+    document.body.appendChild(hostElement);
+    
+    // Create shadow DOM
+    const shadow = hostElement.attachShadow({ mode: 'open' });
+    
+    // Create notification element with styles isolated in shadow DOM
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+      <style>
+        .notification {
+          background-color: white;
+          border: 2px solid #474DFF;
+          border-radius: 8px;
+          padding: 15px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          font-family: Arial, sans-serif;
+          animation: fadeIn 0.3s ease-in-out;
+          color: black;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+        
+        .title {
+          font-weight: bold;
+          color: #001573;
+        }
+        
+        .close-btn {
+          background: none;
+          border: none;
+          font-size: 18px;
+          cursor: pointer;
+          color: #888;
+        }
+        
+        .message {
+          margin: 0;
+          color: #333;
+        }
+      </style>
+      
+      <div class="notification">
+        <div class="header">
+          <div class="title">Abusive words detected</div>
+          <button class="close-btn">&times;</button>
+        </div>
+        <p class="message">Please edit your message for the next time.</p>
+      </div>
+    `;
+    
+    // Add to shadow DOM
+    shadow.appendChild(notification);
+    
+    // Add close button functionality
+    const closeButton = shadow.querySelector('.close-btn');
+    closeButton.addEventListener('click', () => {
+      if (document.body.contains(hostElement)) {
+        document.body.removeChild(hostElement);
+      }
+    });
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (document.body.contains(hostElement)) {
+        document.body.removeChild(hostElement);
+      }
+    }, 5000);
+    
+    console.log('ChatGuard: Notification should be visible now');
+    return true;
+  } catch (error) {
+    console.error('ChatGuard: Error showing notification:', error);
+    
+    // Fallback to simpler method if shadow DOM fails
+    try {
+      alert('ChatGuard: Abusive words detected. Please edit your message.');
+      return true;
+    } catch (e) {
+      console.error('ChatGuard: Even fallback alert failed:', e);
+      return false;
     }
-  }, 5000);
+  }
 }
 
 // Handle form submission
@@ -361,8 +442,6 @@ function handleFormSubmit(event) {
     // Show notification about the replacement
     showNotification();
     
-    // Increment the replacement counter
-    incrementReplacementCounter();
   }
 }
 
@@ -441,36 +520,64 @@ const observer = new MutationObserver((mutations) => {
   }
 });
 
-// Function to increment the replacement counter
-function incrementReplacementCounter() {
-  if (chrome && chrome.storage) {
-    chrome.storage.sync.get(['replacementData'], (result) => {
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth();
-      const currentYear = currentDate.getFullYear();
-      
-      let data = result.replacementData || {
-        count: 0,
-        month: currentMonth,
-        year: currentYear
-      };
-      
-      // Reset counter if it's a new month
-      if (data.month !== currentMonth || data.year !== currentYear) {
-        data = {
-          count: 0,
-          month: currentMonth,
-          year: currentYear
-        };
-      }
-      
-      // Increment the counter
-      data.count += 1;
-      
-      // Save updated data
-      chrome.storage.sync.set({ replacementData: data });
-    });
+
+// Listen for a custom message to trigger notification testing
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'testNotification') {
+    console.log('ChatGuard: Received test notification request');
+    const result = showNotification();
+    sendResponse({ success: result });
+    return true;
   }
+});
+
+// Add this function to your background.js file
+// Then you can call chrome.runtime.sendMessage({action: 'triggerTestNotification'})
+// from the background script console
+function addToBackgroundJS() {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'triggerTestNotification') {
+      // Get the current active tab
+      chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+        if (tabs.length > 0) {
+          // Send test message to content script
+          chrome.tabs.sendMessage(tabs[0].id, 
+            {action: 'testNotification'}, 
+            (response) => {
+              console.log('Test notification result:', response);
+            }
+          );
+        }
+      });
+      return true;
+    }
+  });
+}
+
+// Also add this simplified notification function as a fallback
+function simpleNotification() {
+  const div = document.createElement('div');
+  div.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border: 2px solid red;
+    padding: 20px;
+    z-index: 9999999;
+    font-family: Arial;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  `;
+  div.innerHTML = '<strong>Abusive words detected!</strong><p>Please edit your message.</p>';
+  document.body.appendChild(div);
+  
+  setTimeout(() => {
+    if (document.body.contains(div)) {
+      document.body.removeChild(div);
+    }
+  }, 5000);
+  
+  return true;
 }
 
 // Start observing
